@@ -24,7 +24,13 @@ import javax.tools.Diagnostic.Kind;
 
 public class AnnotationProcessor extends AbstractProcessor {
 	
-	private Map<Element, List<Element>> pluggableServices = new HashMap<>();
+	private final Map<Element, List<Element>> pluggableServices = new HashMap<>();
+	private final List<ServicesListener> listeners;
+	
+	public AnnotationProcessor() {
+		listeners = new ArrayList<>();
+		listeners.add(new ServiceLoaderListener());
+	}
 
 	@Override
 	public Set<String> getSupportedAnnotationTypes() {
@@ -56,7 +62,10 @@ public class AnnotationProcessor extends AbstractProcessor {
 	}
 	
 	private void informListeners() {
-		printLog(pluggableServices.toString());
+		printLog("Services & Implementations: " + pluggableServices.toString());
+		for (ServicesListener listener : listeners) {
+			listener.processPluggableServicesMap(pluggableServices);
+		}
 	}
 	
 	private void discoverServices(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
