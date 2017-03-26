@@ -24,11 +24,11 @@ import javax.tools.Diagnostic.Kind;
 
 public class AnnotationProcessor extends AbstractProcessor {
 	
-	private final Map<Element, List<Element>> pluggableServices = new HashMap<>();
+	private final Map<Element, List<Element>> pluggableServices = new HashMap<Element, List<Element>>();
 	private final List<ServicesListener> listeners;
 	
 	public AnnotationProcessor() {
-		listeners = new ArrayList<>();
+		listeners = new ArrayList<ServicesListener>();
 		listeners.add(new ServiceLoaderListener());
 	}
 
