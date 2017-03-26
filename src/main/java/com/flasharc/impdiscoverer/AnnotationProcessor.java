@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
@@ -64,7 +65,7 @@ public class AnnotationProcessor extends AbstractProcessor {
 	private void informListeners() {
 		printLog("Services & Implementations: " + pluggableServices.toString());
 		for (ServicesListener listener : listeners) {
-			listener.processPluggableServicesMap(pluggableServices);
+			listener.processPluggableServicesMap(pluggableServices, this);
 		}
 	}
 	
@@ -111,24 +112,27 @@ public class AnnotationProcessor extends AbstractProcessor {
 		return null;
 	}
 	
-	private void printLog(CharSequence message) {
+	public void printLog(CharSequence message) {
 		processingEnv.getMessager().printMessage(Kind.NOTE, message);
 	}
 	
-	private void printWarning(CharSequence message, Element element) {
+	public void printWarning(CharSequence message, Element element) {
 		processingEnv.getMessager().printMessage(Kind.WARNING, message, element);
 	}
 	
-	private void printError(CharSequence error) {
+	public void printError(CharSequence error) {
 		processingEnv.getMessager().printMessage(Kind.ERROR, error);
 	}
 	
-	private void printError(CharSequence error, Throwable throwable) {
+	public void printError(CharSequence error, Throwable throwable) {
 		StringWriter writer = new StringWriter();
 		throwable.printStackTrace(new PrintWriter(writer));
 		// Leaving it with the default lineSeparator is not working on Windows commandline (atleast with Gradle).
 		String stackTrace = writer.toString().replace(System.getProperty("line.separator"), "\n");
 		printError(error + stackTrace);
 	}
-
+	
+	public ProcessingEnvironment getProcessingEnvironment() {
+		return processingEnv;
+	}
 }

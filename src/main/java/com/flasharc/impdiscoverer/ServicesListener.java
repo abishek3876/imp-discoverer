@@ -7,5 +7,5 @@ import javax.lang.model.element.Element;
 
 public interface ServicesListener {
 
-	void processPluggableServicesMap(Map<Element, List<Element>> pluggableServices);
+	void processPluggableServicesMap(Map<Element, List<Element>> pluggableServices, AnnotationProcessor processor);
 }
