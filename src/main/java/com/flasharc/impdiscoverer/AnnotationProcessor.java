@@ -3,10 +3,12 @@ package com.flasharc.impdiscoverer;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -14,15 +16,15 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.SimpleElementVisitor6;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
 public class AnnotationProcessor extends AbstractProcessor {
 	
-	private Map<String, List<String>> serviceProviders = new HashMap<>();
+	private Map<Element, List<Element>> pluggableServices = new HashMap<>();
 
 	@Override
 	public Set<String> getSupportedAnnotationTypes() {
@@ -46,20 +48,46 @@ public class AnnotationProcessor extends AbstractProcessor {
 	
 	private boolean processInternal(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		if (roundEnv.processingOver()) {
-			//TODO: Call the listeners.
+			informListeners();
 		} else {
-			processFile(annotations, roundEnv);
+			discoverServices(annotations, roundEnv);
 		}
 		return true;
 	}
 	
-	private void processFile(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+	private void informListeners() {
+		printLog(pluggableServices.toString());
+	}
+	
+	private void discoverServices(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		Set<? extends Element> rootElements = roundEnv.getRootElements();
 		
 		for (Element element : rootElements) {
 			printLog("Processing Type: " + element);
 			AnnotationMirror annotationMirror = getAnnotationMirror(element, PluggableService.class);
-			printLog(annotationMirror == null? "null" : annotationMirror.toString());
+			
+			if (annotationMirror != null) {
+				if (pluggableServices.put(element, new ArrayList<>()) != null) {
+					printWarning("Duplicate Service Class", element);
+				}
+			}
+		}
+		
+		Types typeUtils = processingEnv.getTypeUtils();
+		for (Element element : rootElements) {
+			Set<Modifier> modifiers = element.getModifiers();
+			
+			// If it's a public non-abstract class.
+			if (ElementKind.CLASS.equals(element.getKind()) 
+					&& modifiers.contains(Modifier.PUBLIC) 
+					&& !modifiers.contains(Modifier.ABSTRACT)) {
+				
+				for (Entry<Element, List<Element>> serviceElementEntry : pluggableServices.entrySet()) {
+					if (typeUtils.isSubtype(element.asType(), serviceElementEntry.getKey().asType())) {
+						serviceElementEntry.getValue().add(element);
+					}
+				}
+			}
 		}
 	}
 	
@@ -73,9 +101,13 @@ public class AnnotationProcessor extends AbstractProcessor {
 		}
 		return null;
 	}
-
+	
 	private void printLog(CharSequence message) {
 		processingEnv.getMessager().printMessage(Kind.NOTE, message);
+	}
+	
+	private void printWarning(CharSequence message, Element element) {
+		processingEnv.getMessager().printMessage(Kind.WARNING, message, element);
 	}
 	
 	private void printError(CharSequence error) {
