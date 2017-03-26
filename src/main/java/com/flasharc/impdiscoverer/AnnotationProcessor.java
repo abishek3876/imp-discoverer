@@ -127,7 +127,7 @@ public class AnnotationProcessor extends AbstractProcessor {
 		StringWriter writer = new StringWriter();
 		throwable.printStackTrace(new PrintWriter(writer));
 		// Leaving it with the default lineSeparator is not working on Windows commandline (atleast with Gradle).
-		String stackTrace = writer.toString().replace(System.lineSeparator(), "\n");
+		String stackTrace = writer.toString().replace(System.getProperty("line.separator"), "\n");
 		printError(error + stackTrace);
 	}
 
