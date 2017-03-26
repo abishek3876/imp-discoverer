@@ -76,7 +76,7 @@ public class AnnotationProcessor extends AbstractProcessor {
 			AnnotationMirror annotationMirror = getAnnotationMirror(element, PluggableService.class);
 			
 			if (annotationMirror != null) {
-				if (pluggableServices.put(element, new ArrayList<>()) != null) {
+				if (pluggableServices.put(element, new ArrayList<Element>()) != null) {
 					printWarning("Duplicate Service Class", element);
 				}
 			}
